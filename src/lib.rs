@@ -32,7 +32,7 @@ impl Ec3Key {
 
     /// Encrypts token with key
     pub fn encrypt(&self, token: &str) -> String {
-        let nonce_bytes = rand::thread_rng().gen::<[u8; NONCE_LEN]>();
+        let nonce_bytes = rand::rng().random::<[u8; NONCE_LEN]>();
         let nonce = (&nonce_bytes).into();
         let key = (&self.0).into();
         let cipher = Aes256Gcm::new(key);
