@@ -3,6 +3,7 @@ name = "ectoken"
 version = "0.5.1"
 authors = ["Benoît Burnichon <bburnichon@gmail.com>", "Derek Shiell <derek.shiell@edgecast.com>"]
 edition = "2021"
+rust-version = "1.63"
 description = "Token Generator for Edgecast Token-Based Authentication"
 license = "Apache-2.0"
 homepage = "https://github.com/EdgeCast/rust-ectoken.git"
