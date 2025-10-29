@@ -1,7 +1,7 @@
 #![deny(missing_docs)]
 //! This module could be used to encrypt/decrypt tokens
 
-use aes_gcm::aead::{generic_array::typenum::U32, generic_array::GenericArray, Aead};
+use aes_gcm::aead::Aead;
 use aes_gcm::{Aes256Gcm, KeyInit};
 use base64::engine::general_purpose::URL_SAFE_NO_PAD;
 use base64::Engine;
@@ -15,7 +15,7 @@ const TAG_LEN: usize = 16;
 
 /// Real derived key
 #[derive(Clone, PartialEq)]
-pub struct Ec3Key(pub GenericArray<u8, U32>);
+pub struct Ec3Key(pub [u8; 32]);
 
 impl Ec3Key {
     /// Create a new key that could be used for encryption/decryption afterwards
@@ -27,20 +27,21 @@ impl Ec3Key {
     pub fn new_raw(key: &[u8]) -> Self {
         let mut hasher = Sha256::new();
         hasher.update(key);
-        Self(hasher.finalize())
+        Self(hasher.finalize().into())
     }
 
     /// Encrypts token with key
     pub fn encrypt(&self, token: &str) -> String {
-        let nonce = rand::thread_rng().gen::<[u8; NONCE_LEN]>();
-        let nonce = GenericArray::from_slice(&nonce);
-        let cipher = Aes256Gcm::new(&self.0);
+        let nonce_bytes = rand::rng().random::<[u8; NONCE_LEN]>();
+        let nonce = (&nonce_bytes).into();
+        let key = (&self.0).into();
+        let cipher = Aes256Gcm::new(key);
 
         let mut ciphertext = cipher
             .encrypt(nonce, token.as_bytes())
             .expect("encryption failure!");
 
-        let mut encrypted: Vec<u8> = Vec::from(nonce.as_slice());
+        let mut encrypted: Vec<u8> = Vec::from(nonce_bytes);
         encrypted.append(&mut ciphertext);
 
         URL_SAFE_NO_PAD.encode(&encrypted)
@@ -54,8 +55,9 @@ impl Ec3Key {
             return Err(DecryptionError::IOError("invalid input length"));
         }
 
-        let cipher = Aes256Gcm::new(&self.0);
-        let nonce = GenericArray::from_slice(&token[0..NONCE_LEN]);
+        let key = (&self.0).into();
+        let cipher = Aes256Gcm::new(key);
+        let nonce = (&token[0..NONCE_LEN]).into();
 
         let ciphertext = &token[NONCE_LEN..];
 
